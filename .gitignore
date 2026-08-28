@@ -1,0 +1,11 @@
+# Upload pengguna - jangan ikut di-commit, cukup foldernya saja
+uploads/avatars/*
+!uploads/avatars/.gitkeep
+uploads/dokumen/*
+!uploads/dokumen/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.log

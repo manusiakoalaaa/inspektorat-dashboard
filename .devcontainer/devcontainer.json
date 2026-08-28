@@ -1,0 +1,24 @@
+{
+  "name": "Dashboard Monitoring Reviu OPD (PHP + MySQL)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Dashboard Reviu OPD",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client"
+      ]
+    }
+  }
+}
