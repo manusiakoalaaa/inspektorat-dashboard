@@ -88,3 +88,84 @@ function redirect($path)
     header('Location: ' . base_url($path));
     exit;
 }
+
+/**
+ * Daftar jenis dokumen reviu beserta urutan wajib unggah dan bobot progres.
+ * Urutan: SPT -> Pemeriksaan -> KKR -> LHP (masing-masing menaikkan progres 25%).
+ */
+function dokumen_jenis_list()
+{
+    return [
+        'SPT'         => ['urutan' => 1, 'label' => 'SPT (Surat Perintah Tugas)',       'singkat' => 'SPT',        'progres' => 25],
+        'Pemeriksaan' => ['urutan' => 2, 'label' => 'Dokumen Pemeriksaan',               'singkat' => 'Pemeriksaan', 'progres' => 50],
+        'KKR'         => ['urutan' => 3, 'label' => 'KKR (Kertas Kerja Reviu)',          'singkat' => 'KKR',        'progres' => 75],
+        'LHP'         => ['urutan' => 4, 'label' => 'LHP (Laporan Hasil Pemeriksaan)',   'singkat' => 'LHP',        'progres' => 100],
+    ];
+}
+
+/**
+ * Kembalikan array key jenis dokumen yang sudah punya minimal 1 file pada reviu tsb.
+ */
+function dokumen_jenis_terunggah($pdo, $reviu_id)
+{
+    $stmt = $pdo->prepare("SELECT DISTINCT jenis FROM dokumen WHERE reviu_id = ?");
+    $stmt->execute([(int) $reviu_id]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+/**
+ * Jenis dokumen berikutnya yang boleh diunggah (mengikuti urutan wajib).
+ * Return null jika seluruh dokumen sudah lengkap.
+ */
+function dokumen_jenis_berikutnya($terunggah)
+{
+    foreach (dokumen_jenis_list() as $key => $cfg) {
+        if (!in_array($key, $terunggah, true)) {
+            return $key;
+        }
+    }
+    return null;
+}
+
+/**
+ * Cek apakah sebuah jenis dokumen sudah boleh diunggah:
+ * semua jenis dengan urutan lebih kecil harus sudah terunggah.
+ */
+function dokumen_jenis_terbuka($key, $terunggah)
+{
+    $list = dokumen_jenis_list();
+    if (!isset($list[$key])) return false;
+    foreach ($list as $k => $cfg) {
+        if ($cfg['urutan'] >= $list[$key]['urutan']) break;
+        if (!in_array($k, $terunggah, true)) return false;
+    }
+    return true;
+}
+
+/**
+ * Hitung ulang progres, status reviu, dan status dokumen berdasarkan
+ * dokumen yang sudah diunggah, lalu simpan ke tabel reviu.
+ */
+function recalculate_reviu($pdo, $reviu_id)
+{
+    $terunggah = dokumen_jenis_terunggah($pdo, $reviu_id);
+
+    $progres = 0;
+    foreach (dokumen_jenis_list() as $key => $cfg) {
+        if (in_array($key, $terunggah, true)) {
+            $progres = $cfg['progres'];
+        } else {
+            break; // berhenti pada urutan pertama yang belum diunggah
+        }
+    }
+
+    if ($progres >= 100)      $status = 'Selesai';
+    elseif ($progres > 0)     $status = 'Proses';
+    else                      $status = 'Belum Mulai';
+
+    // Status dokumen menjadi "Lengkap" setelah Dokumen Pemeriksaan diunggah.
+    $dok_status = in_array('Pemeriksaan', $terunggah, true) ? 'Lengkap' : 'Belum Lengkap';
+
+    $stmt = $pdo->prepare("UPDATE reviu SET progres = ?, status = ?, dokumen_status = ? WHERE id = ?");
+    $stmt->execute([$progres, $status, $dok_status, (int) $reviu_id]);
+}

@@ -105,6 +105,7 @@ INSERT INTO reviu (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_t
 CREATE TABLE dokumen (
   id INT AUTO_INCREMENT PRIMARY KEY,
   reviu_id INT NOT NULL,
+  jenis ENUM('SPT','Pemeriksaan','KKR','LHP') NOT NULL DEFAULT 'Pemeriksaan',
   nama_dokumen VARCHAR(150) NOT NULL,
   file_path VARCHAR(255) DEFAULT NULL,
   status ENUM('Lengkap','Belum Lengkap') NOT NULL DEFAULT 'Belum Lengkap',
@@ -113,11 +114,23 @@ CREATE TABLE dokumen (
   CONSTRAINT fk_dokumen_reviu FOREIGN KEY (reviu_id) REFERENCES reviu(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-INSERT INTO dokumen (reviu_id, nama_dokumen, status, tanggal_upload) VALUES
-(1, 'KKR Reviu RKA Dinas PUPR', 'Lengkap', '2025-05-05'),
-(3, 'Berita Acara Reviu LKPD Dinas Pendidikan', 'Lengkap', '2025-05-06'),
-(7, 'Laporan Hasil Reviu LKPD Badan Keuangan', 'Lengkap', '2025-05-04'),
-(2, 'Data Pendukung Reviu RKA Dinas Kesehatan', 'Belum Lengkap', '2025-05-07');
+INSERT INTO dokumen (reviu_id, jenis, nama_dokumen, status, tanggal_upload) VALUES
+(1, 'KKR',         'KKR Reviu RKA Dinas PUPR', 'Lengkap', '2025-05-05'),
+(3, 'Pemeriksaan', 'Berita Acara Reviu LKPD Dinas Pendidikan', 'Lengkap', '2025-05-06'),
+(7, 'LHP',         'Laporan Hasil Reviu LKPD Badan Keuangan', 'Lengkap', '2025-05-04'),
+(2, 'Pemeriksaan', 'Data Pendukung Reviu RKA Dinas Kesehatan', 'Belum Lengkap', '2025-05-07');
+
+-- ============ ANGGOTA TIM REVIU ============
+CREATE TABLE tim_anggota (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tim_reviu_id INT NOT NULL,
+  user_id INT NOT NULL,
+  peran ENUM('Ketua','Anggota') NOT NULL DEFAULT 'Anggota',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ta_tim FOREIGN KEY (tim_reviu_id) REFERENCES tim_reviu(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ta_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uniq_tim_user (tim_reviu_id, user_id)
+) ENGINE=InnoDB;
 
 -- ============ JADWAL KEGIATAN ============
 CREATE TABLE jadwal_kegiatan (

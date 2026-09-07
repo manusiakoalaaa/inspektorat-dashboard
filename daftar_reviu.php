@@ -187,32 +187,13 @@ include __DIR__ . '/includes/header.php';
           <input type="date" name="tgl_target_selesai" id="f_tgl_target" class="form-control-x" required>
         </div>
       </div>
-      <div class="form-grid-2">
-        <div class="form-row-x">
-          <label>Status Dokumen</label>
-          <select name="dokumen_status" id="f_dok_status" class="form-select-x">
-            <option value="Lengkap">Lengkap</option>
-            <option value="Belum Lengkap">Belum Lengkap</option>
-          </select>
-        </div>
-        <div class="form-row-x">
-          <label>Status Reviu</label>
-          <select name="status" id="f_status" class="form-select-x">
-            <option value="Belum Mulai">Belum Mulai</option>
-            <option value="Proses">Proses</option>
-            <option value="Selesai">Selesai</option>
-            <option value="Tertunda">Tertunda</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row-x">
-        <label>Progres (%)</label>
-        <input type="range" name="progres" id="f_progres" min="0" max="100" value="0" oninput="document.getElementById('progresLabel').textContent=this.value+'%'">
-        <div class="small-muted" id="progresLabel">0%</div>
-      </div>
       <div class="form-row-x">
         <label>Keterangan</label>
         <input type="text" name="keterangan" id="f_keterangan" class="form-control-x" placeholder="Contoh: Menunggu dokumen dari OPD">
+      </div>
+      <div class="alert-x alert-success-x" style="font-size:12.5px;">
+        <i class="bi bi-info-circle"></i> Status dokumen, status reviu, dan progres <b>dihitung otomatis</b>
+        dari dokumen yang diunggah pada halaman Detail Reviu (SPT &rarr; Pemeriksaan &rarr; KKR &rarr; LHP).
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-3">
@@ -231,7 +212,6 @@ function openAddModal() {
   document.getElementById('form_action').value = 'add';
   document.getElementById('reviuForm').reset();
   document.getElementById('f_id').value = '';
-  document.getElementById('progresLabel').textContent = '0%';
   document.getElementById('reviuModalOverlay').classList.add('show');
 }
 function openEditModal(d) {
@@ -244,10 +224,6 @@ function openEditModal(d) {
   document.getElementById('f_tahun').value = d.tahun;
   document.getElementById('f_tgl_mulai').value = d.tgl_mulai;
   document.getElementById('f_tgl_target').value = d.tgl_target_selesai;
-  document.getElementById('f_dok_status').value = d.dokumen_status;
-  document.getElementById('f_status').value = d.status;
-  document.getElementById('f_progres').value = d.progres;
-  document.getElementById('progresLabel').textContent = d.progres + '%';
   document.getElementById('f_keterangan').value = d.keterangan || '';
   document.getElementById('reviuModalOverlay').classList.add('show');
 }

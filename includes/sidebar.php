@@ -11,6 +11,7 @@ $menu_items = [
   ['label' => 'Reviu Tertunda',  'icon' => 'bi-clock-history',              'link' => 'reviu_tertunda.php',  'roles' => ['administrator', 'auditor']],
   ['label' => 'Dokumen',         'icon' => 'bi-folder-fill',                'link' => 'dokumen.php',         'roles' => ['administrator', 'auditor']],
   ['label' => 'Laporan',         'icon' => 'bi-file-earmark-bar-graph-fill', 'link' => 'laporan.php',        'roles' => ['administrator', 'auditor']],
+  ['label' => 'Anggota Tim',     'icon' => 'bi-person-badge-fill',          'link' => 'anggota_tim.php',     'roles' => ['administrator']],
   ['label' => 'Manajemen User',  'icon' => 'bi-people-fill',                'link' => 'user_management.php', 'roles' => ['administrator']],
   ['label' => 'Pengaturan',      'icon' => 'bi-gear-fill',                  'link' => 'pengaturan.php',      'roles' => ['administrator', 'auditor']],
 ];

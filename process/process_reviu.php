@@ -33,9 +33,6 @@ if ($form_action === 'add' || $form_action === 'edit') {
     $tahun       = (int) ($_POST['tahun'] ?? date('Y'));
     $tgl_mulai   = $_POST['tgl_mulai'] ?? null;
     $tgl_target  = $_POST['tgl_target_selesai'] ?? null;
-    $dok_status  = in_array($_POST['dokumen_status'] ?? '', $valid_dok, true) ? $_POST['dokumen_status'] : 'Belum Lengkap';
-    $status      = in_array($_POST['status'] ?? '', $valid_status, true) ? $_POST['status'] : 'Belum Mulai';
-    $progres     = max(0, min(100, (int) ($_POST['progres'] ?? 0)));
     $keterangan  = trim($_POST['keterangan'] ?? '');
 
     if (!$opd_id || !$jenis_id || !$tim_id || !$tgl_mulai || !$tgl_target) {
@@ -44,15 +41,18 @@ if ($form_action === 'add' || $form_action === 'edit') {
     }
 
     if ($form_action === 'add') {
+        // Progres, status, dan status dokumen dihitung otomatis dari dokumen yang diunggah.
         $stmt = $pdo->prepare("INSERT INTO reviu
             (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_target_selesai, dokumen_status, status, progres, keterangan, created_by)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $dok_status, $status, $progres, $keterangan, $_SESSION['user_id']]);
+            VALUES (?,?,?,?,?,?,'Belum Lengkap','Belum Mulai',0,?,?)");
+        $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $keterangan, $_SESSION['user_id']]);
         flash_set('success', 'Data reviu baru berhasil ditambahkan.');
     } else {
         $id = (int) ($_POST['id'] ?? 0);
-        $stmt = $pdo->prepare("UPDATE reviu SET opd_id=?, jenis_reviu_id=?, tim_reviu_id=?, tahun=?, tgl_mulai=?, tgl_target_selesai=?, dokumen_status=?, status=?, progres=?, keterangan=? WHERE id=?");
-        $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $dok_status, $status, $progres, $keterangan, $id]);
+        $stmt = $pdo->prepare("UPDATE reviu SET opd_id=?, jenis_reviu_id=?, tim_reviu_id=?, tahun=?, tgl_mulai=?, tgl_target_selesai=?, keterangan=? WHERE id=?");
+        $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $keterangan, $id]);
+        // Sinkronkan kembali progres/status kalau tim berubah tidak berpengaruh, tetapi jaga konsistensi.
+        recalculate_reviu($pdo, $id);
         flash_set('success', 'Data reviu berhasil diperbarui.');
     }
     redirect($back);
