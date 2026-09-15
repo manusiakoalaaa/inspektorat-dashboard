@@ -67,8 +67,11 @@ include __DIR__ . '/includes/header.php';
           <tr><td class="small-muted">Target Selesai</td><td><?= format_tanggal_indo($reviu['tgl_target_selesai']) ?></td></tr>
           <tr><td class="small-muted">Status Dokumen</td><td><span class="badge-x <?= dokumen_badge_class($reviu['dokumen_status']) ?>"><?= e($reviu['dokumen_status']) ?></span></td></tr>
           <tr><td class="small-muted">Status Reviu</td><td><span class="badge-x <?= status_badge_class($reviu['status']) ?>"><?= e($reviu['status']) ?></span></td></tr>
-          <?php if ($reviu['status'] === 'Tertunda' && !empty($reviu['kendala'])): ?>
-          <tr><td class="small-muted">Kendala</td><td style="color:var(--red); font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> <?= e($reviu['kendala']) ?></td></tr>
+          <?php if (!empty($reviu['kendala'])): ?>
+          <tr><td class="small-muted">Kendala</td><td style="color:var(--red); font-weight:600;">
+            <i class="bi bi-exclamation-triangle-fill"></i> <?= e($reviu['kendala']) ?>
+            <?= $reviu['kendala_manual'] ? '<span class="badge-x badge-belummulai" style="font-size:9px; padding:1px 5px; margin-left:3px; font-weight:600;">Manual</span>' : '<span class="badge-x badge-proses" style="font-size:9px; padding:1px 5px; margin-left:3px; font-weight:600;">Otomatis</span>' ?>
+          </td></tr>
           <?php endif; ?>
           <tr><td class="small-muted">Progres</td><td>
             <div class="d-flex align-items-center gap-2">

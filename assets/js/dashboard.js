@@ -133,7 +133,7 @@ function renderTable(rows) {
   }
   tbody.innerHTML = rows.map(function (r) {
     const dokBadge = r.dokumen_status === 'Lengkap' ? 'badge-lengkap' : 'badge-belumlengkap';
-    const kendalaAttr = (r.status === 'Tertunda' && r.kendala) ? ' title="' + escapeHtml(r.kendala) + '"' : '';
+    const kendalaAttr = r.kendala ? ' title="' + escapeHtml(r.kendala) + '"' : '';
     return '<tr>' +
       '<td>' + r.no + '</td>' +
       '<td><b>' + escapeHtml(r.nama_opd) + '</b></td>' +

@@ -181,7 +181,7 @@ function recalculate_reviu($pdo, $reviu_id)
 {
     $reviu_id = (int) $reviu_id;
 
-    $stmt = $pdo->prepare("SELECT tgl_target_selesai FROM reviu WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT tgl_target_selesai, kendala, kendala_manual FROM reviu WHERE id = ?");
     $stmt->execute([$reviu_id]);
     $reviu = $stmt->fetch();
     if (!$reviu) return;
@@ -200,17 +200,26 @@ function recalculate_reviu($pdo, $reviu_id)
     // Status dokumen menjadi "Lengkap" setelah Dokumen Pemeriksaan diunggah.
     $dok_status = in_array('Pemeriksaan', $terunggah, true) ? 'Lengkap' : 'Belum Lengkap';
 
-    $kendala = null;
     if ($progres >= 100) {
         $status = 'Selesai';
     } elseif (!empty($reviu['tgl_target_selesai']) && date('Y-m-d') > $reviu['tgl_target_selesai']) {
         // Lewat tanggal target selesai tapi belum tuntas -> Tertunda + jelaskan kendalanya
         $status = 'Tertunda';
-        $kendala = reviu_kendala_text($terunggah, $reviu['tgl_target_selesai']);
     } elseif ($progres > 0) {
         $status = 'Proses';
     } else {
         $status = 'Belum Mulai';
+    }
+
+    // Kendala manual (diisi admin/auditor lewat form) tidak pernah ditimpa
+    // oleh perhitungan otomatis. Kendala otomatis hanya muncul saat status
+    // Tertunda dan tidak sedang dalam mode manual.
+    if (!empty($reviu['kendala_manual'])) {
+        $kendala = $reviu['kendala'];
+    } elseif ($status === 'Tertunda') {
+        $kendala = reviu_kendala_text($terunggah, $reviu['tgl_target_selesai']);
+    } else {
+        $kendala = null;
     }
 
     $stmt = $pdo->prepare("UPDATE reviu SET progres = ?, status = ?, dokumen_status = ?, kendala = ? WHERE id = ?");

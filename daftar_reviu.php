@@ -101,9 +101,12 @@ include __DIR__ . '/includes/header.php';
           <td><?= format_tanggal_indo($r['tgl_target_selesai']) ?></td>
           <td><span class="badge-x <?= dokumen_badge_class($r['dokumen_status']) ?>"><?= e($r['dokumen_status']) ?></span></td>
           <td>
-            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= ($r['status'] === 'Tertunda' && $r['kendala']) ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
-            <?php if ($r['status'] === 'Tertunda' && $r['kendala']): ?>
-              <div class="small-muted" style="font-size:11px; color:var(--red); max-width:220px;"><i class="bi bi-exclamation-circle"></i> <?= e($r['kendala']) ?></div>
+            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= $r['kendala'] ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
+            <?php if ($r['kendala']): ?>
+              <div class="small-muted" style="font-size:11px; color:var(--red); max-width:220px;">
+                <i class="bi bi-exclamation-circle"></i> <?= e($r['kendala']) ?>
+                <?= $r['kendala_manual'] ? '<span class="badge-x badge-belummulai" style="font-size:9px; padding:1px 5px; margin-left:3px;">Manual</span>' : '' ?>
+              </div>
             <?php endif; ?>
           </td>
           <td>
@@ -122,6 +125,7 @@ include __DIR__ . '/includes/header.php';
                     "tim_reviu_id" => $r['tim_reviu_id'], "tahun" => $r['tahun'], "tgl_mulai" => $r['tgl_mulai'],
                     "tgl_target_selesai" => $r['tgl_target_selesai'], "dokumen_status" => $r['dokumen_status'],
                     "status" => $r['status'], "progres" => $r['progres'], "keterangan" => $r['keterangan'],
+                    "kendala_manual" => (int) $r['kendala_manual'], "kendala" => $r['kendala'],
                 ], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
                 <i class="bi bi-pencil"></i>
               </button>
@@ -198,11 +202,29 @@ include __DIR__ . '/includes/header.php';
         <label>Keterangan</label>
         <input type="text" name="keterangan" id="f_keterangan" class="form-control-x" placeholder="Contoh: Menunggu dokumen dari OPD">
       </div>
+
+      <div class="form-row-x">
+        <label>Sumber Kendala</label>
+        <div class="d-flex gap-3" style="font-size:13px; font-weight:600;">
+          <label class="d-flex align-items-center gap-1" style="font-weight:600;">
+            <input type="radio" name="kendala_mode" id="f_kendala_mode_otomatis" value="otomatis" checked onchange="toggleKendalaMode()"> Otomatis
+          </label>
+          <label class="d-flex align-items-center gap-1" style="font-weight:600;">
+            <input type="radio" name="kendala_mode" id="f_kendala_mode_manual" value="manual" onchange="toggleKendalaMode()"> Manual
+          </label>
+        </div>
+      </div>
+      <div class="form-row-x" id="f_kendala_manual_wrap" style="display:none;">
+        <label>Penjelasan Kendala (Manual)</label>
+        <textarea name="kendala_manual_text" id="f_kendala_manual_text" class="form-control-x" rows="2" maxlength="255" placeholder="Tulis penjelasan kendala secara manual..."></textarea>
+      </div>
+
       <div class="alert-x alert-success-x" style="font-size:12.5px;">
-        <i class="bi bi-info-circle"></i> Status dokumen, status reviu, dan progres <b>dihitung otomatis</b>
-        dari dokumen yang diunggah pada halaman Detail Reviu (SPT &rarr; Pemeriksaan &rarr; KKR &rarr; LHP).
-        Jika Tanggal Target Selesai sudah lewat namun reviu belum tuntas, status otomatis menjadi
-        <b>Tertunda</b> lengkap dengan penjelasan kendalanya.
+        <i class="bi bi-info-circle"></i> Secara <b>otomatis</b>, status dokumen, status reviu, progres, dan penjelasan
+        kendala dihitung dari dokumen yang diunggah pada halaman Detail Reviu (SPT &rarr; Pemeriksaan &rarr; KKR &rarr; LHP).
+        Jika Tanggal Target Selesai sudah lewat namun reviu belum tuntas, status otomatis menjadi <b>Tertunda</b>.
+        Pilih <b>Manual</b> jika ingin menuliskan sendiri penjelasan kendalanya &mdash; teks manual tidak akan ditimpa
+        oleh perhitungan otomatis sampai dikembalikan ke mode Otomatis.
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-3">
@@ -216,11 +238,18 @@ include __DIR__ . '/includes/header.php';
 <?php
 $page_scripts = <<<'JS'
 <script>
+function toggleKendalaMode() {
+  var manual = document.getElementById('f_kendala_mode_manual').checked;
+  document.getElementById('f_kendala_manual_wrap').style.display = manual ? '' : 'none';
+}
 function openAddModal() {
   document.getElementById('reviuModalTitle').textContent = 'Tambah Reviu';
   document.getElementById('form_action').value = 'add';
   document.getElementById('reviuForm').reset();
   document.getElementById('f_id').value = '';
+  document.getElementById('f_kendala_mode_otomatis').checked = true;
+  document.getElementById('f_kendala_manual_text').value = '';
+  toggleKendalaMode();
   document.getElementById('reviuModalOverlay').classList.add('show');
 }
 function openEditModal(d) {
@@ -234,6 +263,14 @@ function openEditModal(d) {
   document.getElementById('f_tgl_mulai').value = d.tgl_mulai;
   document.getElementById('f_tgl_target').value = d.tgl_target_selesai;
   document.getElementById('f_keterangan').value = d.keterangan || '';
+  if (d.kendala_manual) {
+    document.getElementById('f_kendala_mode_manual').checked = true;
+    document.getElementById('f_kendala_manual_text').value = d.kendala || '';
+  } else {
+    document.getElementById('f_kendala_mode_otomatis').checked = true;
+    document.getElementById('f_kendala_manual_text').value = '';
+  }
+  toggleKendalaMode();
   document.getElementById('reviuModalOverlay').classList.add('show');
 }
 function closeReviuModal() {

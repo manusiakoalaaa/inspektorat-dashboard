@@ -92,7 +92,7 @@ include __DIR__ . '/includes/header.php';
           <td><?= format_tanggal_indo($r['tgl_target_selesai']) ?></td>
           <td><span class="badge-x <?= dokumen_badge_class($r['dokumen_status']) ?>"><?= e($r['dokumen_status']) ?></span></td>
           <td>
-            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= ($r['status'] === 'Tertunda' && !empty($r['kendala'])) ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
+            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= !empty($r['kendala']) ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
           </td>
           <td>
             <div class="d-flex align-items-center gap-2">

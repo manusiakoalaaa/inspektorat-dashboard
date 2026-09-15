@@ -34,6 +34,8 @@ if ($form_action === 'add' || $form_action === 'edit') {
     $tgl_mulai   = $_POST['tgl_mulai'] ?? null;
     $tgl_target  = $_POST['tgl_target_selesai'] ?? null;
     $keterangan  = trim($_POST['keterangan'] ?? '');
+    $kendala_mode = ($_POST['kendala_mode'] ?? 'otomatis') === 'manual' ? 'manual' : 'otomatis';
+    $kendala_manual_text = trim($_POST['kendala_manual_text'] ?? '');
 
     if (!$opd_id || !$jenis_id || !$tim_id || !$tgl_mulai || !$tgl_target) {
         flash_set('error', 'Semua field wajib diisi dengan benar.');
@@ -46,14 +48,29 @@ if ($form_action === 'add' || $form_action === 'edit') {
             (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_target_selesai, dokumen_status, status, progres, keterangan, created_by)
             VALUES (?,?,?,?,?,?,'Belum Lengkap','Belum Mulai',0,?,?)");
         $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $keterangan, $_SESSION['user_id']]);
-        // Jaga-jaga kalau tanggal target yang diinput sudah lewat dari awal
-        recalculate_reviu($pdo, (int) $pdo->lastInsertId());
+        $id = (int) $pdo->lastInsertId();
+
+        if ($kendala_mode === 'manual') {
+            $pdo->prepare("UPDATE reviu SET kendala = ?, kendala_manual = 1 WHERE id = ?")
+                ->execute([$kendala_manual_text !== '' ? $kendala_manual_text : null, $id]);
+        }
+        // Jaga-jaga kalau tanggal target yang diinput sudah lewat dari awal.
+        // Kendala manual (jika diisi) tetap dipertahankan oleh recalculate_reviu().
+        recalculate_reviu($pdo, $id);
         flash_set('success', 'Data reviu baru berhasil ditambahkan.');
     } else {
         $id = (int) ($_POST['id'] ?? 0);
         $stmt = $pdo->prepare("UPDATE reviu SET opd_id=?, jenis_reviu_id=?, tim_reviu_id=?, tahun=?, tgl_mulai=?, tgl_target_selesai=?, keterangan=? WHERE id=?");
         $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $keterangan, $id]);
-        // Sinkronkan kembali progres/status kalau tim berubah tidak berpengaruh, tetapi jaga konsistensi.
+
+        if ($kendala_mode === 'manual') {
+            $pdo->prepare("UPDATE reviu SET kendala = ?, kendala_manual = 1 WHERE id = ?")
+                ->execute([$kendala_manual_text !== '' ? $kendala_manual_text : null, $id]);
+        } else {
+            // Kembali ke mode otomatis -> lepas kunci manual, teks kendala akan dihitung ulang.
+            $pdo->prepare("UPDATE reviu SET kendala_manual = 0 WHERE id = ?")->execute([$id]);
+        }
+        // Sinkronkan kembali progres/status/kendala sesuai mode yang dipilih.
         recalculate_reviu($pdo, $id);
         flash_set('success', 'Data reviu berhasil diperbarui.');
     }
