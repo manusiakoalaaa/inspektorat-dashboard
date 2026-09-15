@@ -133,6 +133,7 @@ function renderTable(rows) {
   }
   tbody.innerHTML = rows.map(function (r) {
     const dokBadge = r.dokumen_status === 'Lengkap' ? 'badge-lengkap' : 'badge-belumlengkap';
+    const kendalaAttr = (r.status === 'Tertunda' && r.kendala) ? ' title="' + escapeHtml(r.kendala) + '"' : '';
     return '<tr>' +
       '<td>' + r.no + '</td>' +
       '<td><b>' + escapeHtml(r.nama_opd) + '</b></td>' +
@@ -142,7 +143,7 @@ function renderTable(rows) {
       '<td>' + r.tgl_mulai_fmt + '</td>' +
       '<td>' + r.tgl_target_fmt + '</td>' +
       '<td><span class="badge-x ' + dokBadge + '">' + escapeHtml(r.dokumen_status) + '</span></td>' +
-      '<td><span class="badge-x ' + statusBadgeClass(r.status) + '">' + escapeHtml(r.status) + '</span></td>' +
+      '<td><span class="badge-x ' + statusBadgeClass(r.status) + '"' + kendalaAttr + '>' + escapeHtml(r.status) + '</span></td>' +
       '<td>' +
         '<div class="d-flex align-items-center gap-2">' +
           '<div class="progress-thin" style="flex:1;"><div class="bar" style="width:' + r.progres + '%; background:' + progresColor(r.progres) + ';"></div></div>' +
@@ -181,6 +182,59 @@ function renderDokumen(d) {
   document.getElementById('docBelumLengkap').textContent = formatNumber(d.belum_lengkap);
 }
 
+function renderEarlyWarning(ew) {
+  if (!ew) return;
+  const total = (ew.kritis || 0) + (ew.peringatan || 0);
+
+  const banner = document.getElementById('ewBanner');
+  if (banner) {
+    const title = document.getElementById('ewBannerTitle');
+    const sub = document.getElementById('ewBannerSub');
+    const btn = document.getElementById('ewBannerBtn');
+    if (ew.kritis > 0) {
+      banner.hidden = false;
+      banner.classList.add('ew-banner-critical');
+      if (title) title.textContent = ew.kritis + ' reviu berstatus KRITIS, mendekati tenggat!';
+      if (sub) sub.textContent = 'Sisa H-2 atau kurang dan dokumennya belum tuntas. Segera tindak lanjuti.';
+      if (btn) btn.classList.add('btn-danger-x');
+    } else if (ew.peringatan > 0) {
+      banner.hidden = false;
+      banner.classList.remove('ew-banner-critical');
+      if (title) title.textContent = ew.peringatan + ' reviu mendekati tenggat (H-3 s.d H-7).';
+      if (sub) sub.textContent = 'Pantau progresnya supaya tidak terlambat.';
+      if (btn) btn.classList.remove('btn-danger-x');
+    } else {
+      banner.hidden = true;
+    }
+  }
+
+  const badge = document.getElementById('ewCountBadge');
+  if (badge) {
+    if (total > 0) { badge.hidden = false; badge.textContent = total + ' berisiko'; }
+    else badge.hidden = true;
+  }
+
+  const listEl = document.getElementById('ewListWidget');
+  if (!listEl) return;
+  if (!ew.items || !ew.items.length) {
+    listEl.innerHTML = '<div class="small-muted" style="text-align:center; padding:14px 0;"><i class="bi bi-emoji-smile"></i> Tidak ada reviu mendekati tenggat.</div>';
+    return;
+  }
+  listEl.innerHTML = ew.items.map(function (it) {
+    const isKritis = it.level === 'kritis';
+    const countdown = it.sisa_hari === 0 ? 'Hari ini' : ('H-' + it.sisa_hari);
+    const sub = escapeHtml(it.nama_jenis) + (it.dokumen_ditunggu ? ' &middot; Menunggu ' + escapeHtml(it.dokumen_ditunggu) : '');
+    return '<div class="ew-mini ' + (isKritis ? 'ew-mini-critical' : 'ew-mini-warning') + '">' +
+      '<div class="ew-mini-dot"></div>' +
+      '<div class="ew-mini-body">' +
+        '<div class="ew-mini-title">' + escapeHtml(it.nama_opd) + '</div>' +
+        '<div class="ew-mini-sub">' + sub + '</div>' +
+      '</div>' +
+      '<a href="reviu_detail.php?id=' + it.id + '" class="ew-mini-badge">' + countdown + '</a>' +
+    '</div>';
+  }).join('');
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? '' : str;
@@ -198,6 +252,7 @@ function loadDashboard() {
       renderChartJenis(json.chart_jenis);
       renderTable(json.table);
       renderJadwal(json.jadwal);
+      renderEarlyWarning(json.early_warning);
       renderDokumen(json.dokumen_minggu);
     })
     .catch(function (err) {

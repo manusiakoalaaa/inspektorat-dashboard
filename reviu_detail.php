@@ -19,6 +19,11 @@ if (!$reviu) {
     redirect('index.php');
 }
 
+// Pastikan status (termasuk Tertunda berdasarkan tanggal target) selalu terkini
+recalculate_reviu($pdo, $id);
+$stmt->execute([$id]);
+$reviu = $stmt->fetch();
+
 $stmt = $pdo->prepare("SELECT * FROM dokumen WHERE reviu_id = ? ORDER BY id ASC");
 $stmt->execute([$id]);
 $dokumen_list = $stmt->fetchAll();
@@ -62,6 +67,9 @@ include __DIR__ . '/includes/header.php';
           <tr><td class="small-muted">Target Selesai</td><td><?= format_tanggal_indo($reviu['tgl_target_selesai']) ?></td></tr>
           <tr><td class="small-muted">Status Dokumen</td><td><span class="badge-x <?= dokumen_badge_class($reviu['dokumen_status']) ?>"><?= e($reviu['dokumen_status']) ?></span></td></tr>
           <tr><td class="small-muted">Status Reviu</td><td><span class="badge-x <?= status_badge_class($reviu['status']) ?>"><?= e($reviu['status']) ?></span></td></tr>
+          <?php if ($reviu['status'] === 'Tertunda' && !empty($reviu['kendala'])): ?>
+          <tr><td class="small-muted">Kendala</td><td style="color:var(--red); font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> <?= e($reviu['kendala']) ?></td></tr>
+          <?php endif; ?>
           <tr><td class="small-muted">Progres</td><td>
             <div class="d-flex align-items-center gap-2">
               <div class="progress-thin" style="width:180px;"><div class="bar" style="width:<?= (int)$reviu['progres'] ?>%; background:<?= progres_bar_color($reviu['progres']) ?>;"></div></div>
@@ -73,6 +81,7 @@ include __DIR__ . '/includes/header.php';
       </table>
       <div class="small-muted" style="font-size:12px; margin-top:6px;">
         <i class="bi bi-lightbulb"></i> Progres &amp; status diperbarui otomatis mengikuti dokumen yang diunggah.
+        Status berubah menjadi <b>Tertunda</b> otomatis apabila tanggal target selesai sudah lewat namun reviu belum tuntas.
       </div>
     </div>
 
@@ -138,7 +147,8 @@ include __DIR__ . '/includes/header.php';
             <a href="uploads/dokumen/<?= e($d['file_path']) ?>" target="_blank" class="btn-eye" title="Lihat file"><i class="bi bi-eye"></i></a>
           <?php endif; ?>
           <?php if ($is_editor): ?>
-          <form method="POST" action="process/process_dokumen.php" onsubmit="return confirm('Hapus dokumen ini? Progres reviu akan dihitung ulang.');">
+          <form method="POST" action="process/process_dokumen.php"
+                data-confirm="Hapus dokumen ini? Progres reviu akan dihitung ulang secara otomatis." data-confirm-button="Ya, Hapus">
             <?= csrf_field() ?>
             <input type="hidden" name="form_action" value="delete">
             <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">

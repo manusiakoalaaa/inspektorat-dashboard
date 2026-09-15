@@ -46,6 +46,8 @@ if ($form_action === 'add' || $form_action === 'edit') {
             (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_target_selesai, dokumen_status, status, progres, keterangan, created_by)
             VALUES (?,?,?,?,?,?,'Belum Lengkap','Belum Mulai',0,?,?)");
         $stmt->execute([$opd_id, $jenis_id, $tim_id, $tahun, $tgl_mulai, $tgl_target, $keterangan, $_SESSION['user_id']]);
+        // Jaga-jaga kalau tanggal target yang diinput sudah lewat dari awal
+        recalculate_reviu($pdo, (int) $pdo->lastInsertId());
         flash_set('success', 'Data reviu baru berhasil ditambahkan.');
     } else {
         $id = (int) ($_POST['id'] ?? 0);

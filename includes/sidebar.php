@@ -9,6 +9,7 @@ $menu_items = [
   ['label' => 'Daftar Reviu',    'icon' => 'bi-file-earmark-text-fill',     'link' => 'daftar_reviu.php',    'roles' => ['administrator', 'auditor']],
   ['label' => 'Progres OPD',     'icon' => 'bi-bank2',                      'link' => 'progres_opd.php',     'roles' => ['administrator', 'auditor']],
   ['label' => 'Reviu Tertunda',  'icon' => 'bi-clock-history',              'link' => 'reviu_tertunda.php',  'roles' => ['administrator', 'auditor']],
+  ['label' => 'Peringatan Dini', 'icon' => 'bi-exclamation-diamond-fill',   'link' => 'peringatan_dini.php', 'roles' => ['administrator', 'auditor', 'pimpinan'], 'badge' => 'early_warning'],
   ['label' => 'Dokumen',         'icon' => 'bi-folder-fill',                'link' => 'dokumen.php',         'roles' => ['administrator', 'auditor']],
   ['label' => 'Laporan',         'icon' => 'bi-file-earmark-bar-graph-fill', 'link' => 'laporan.php',        'roles' => ['administrator', 'auditor']],
   ['label' => 'Anggota Tim',     'icon' => 'bi-person-badge-fill',          'link' => 'anggota_tim.php',     'roles' => ['administrator']],
@@ -17,6 +18,22 @@ $menu_items = [
 ];
 
 $__avatar = avatar_url($__user['avatar']);
+
+// Hitung jumlah reviu yang masuk zona peringatan dini (H-7 s.d H-0, belum tuntas)
+// untuk ditampilkan sebagai badge notifikasi di menu sidebar.
+$__badge_counts = ['early_warning' => 0];
+try {
+    global $pdo;
+    $rows = $pdo->query("SELECT tgl_target_selesai, progres FROM reviu WHERE progres < 100")->fetchAll();
+    foreach ($rows as $row) {
+        $sisa = hari_tersisa($row['tgl_target_selesai']);
+        if ($sisa !== null && $sisa >= 0 && $sisa <= 7) {
+            $__badge_counts['early_warning']++;
+        }
+    }
+} catch (Exception $ex) {
+    // Diamkan saja kalau tabel belum siap; badge cukup tidak tampil.
+}
 ?>
 <aside class="sidebar" id="appSidebar">
     <div class="sidebar-brand">
@@ -37,6 +54,9 @@ $__avatar = avatar_url($__user['avatar']);
         <a href="<?= e(base_url($item['link'])) ?>" class="menu-item <?= $is_active ? 'active' : '' ?>">
             <i class="bi <?= e($item['icon']) ?>"></i>
             <span><?= e($item['label']) ?></span>
+            <?php if (!empty($item['badge']) && !empty($__badge_counts[$item['badge']])): ?>
+              <span class="menu-badge"><?= (int) $__badge_counts[$item['badge']] ?></span>
+            <?php endif; ?>
         </a>
         <?php endforeach; ?>
     </nav>
@@ -46,7 +66,7 @@ $__avatar = avatar_url($__user['avatar']);
             <a href="<?= e(base_url('profile.php')) ?>"><i class="bi bi-person-gear"></i> Edit Profil</a>
             <hr>
             <a href="<?= e(base_url('logout.php')) ?>" class="text-danger"
-                onclick="return confirm('Yakin ingin logout?');"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                data-confirm="Yakin ingin logout?" data-confirm-icon="question" data-confirm-button="Ya, Logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
         <div class="user-row" id="userRowToggle">
             <?php if ($__avatar): ?>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Konfigurasi koneksi database
  * Sesuaikan dengan environment lokal (XAMPP/Laragon/dll)

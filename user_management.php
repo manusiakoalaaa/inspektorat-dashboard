@@ -65,7 +65,8 @@ include __DIR__ . '/includes/header.php';
                 <i class="bi bi-pencil"></i>
               </button>
               <?php if ((int)$u['id'] !== (int)$_SESSION['user_id']): ?>
-              <form method="POST" action="process/process_user.php" onsubmit="return confirm('Yakin hapus user <?= e(addslashes($u['nama_lengkap'])) ?>?');" style="display:inline;">
+              <form method="POST" action="process/process_user.php" style="display:inline;"
+                    data-confirm="Yakin hapus user <?= e($u['nama_lengkap']) ?>?" data-confirm-button="Ya, Hapus">
                 <?= csrf_field() ?>
                 <input type="hidden" name="form_action" value="delete">
                 <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">

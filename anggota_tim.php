@@ -65,7 +65,8 @@ include __DIR__ . '/includes/header.php';
           <td><span class="badge-x <?= $a['peran'] === 'Ketua' ? 'badge-proses' : 'badge-belummulai' ?>"><?= e($a['peran']) ?></span></td>
           <td><span class="badge-x <?= $a['status'] === 'aktif' ? 'badge-lengkap' : 'badge-belumlengkap' ?>"><?= $a['status'] === 'aktif' ? 'Aktif' : 'Nonaktif' ?></span></td>
           <td>
-            <form method="POST" action="process/process_anggota.php" onsubmit="return confirm('Keluarkan anggota ini dari tim? Akun tetap ada di Manajemen User.');" style="display:inline;">
+            <form method="POST" action="process/process_anggota.php" style="display:inline;"
+                  data-confirm="Keluarkan anggota ini dari tim? Akun tetap ada di Manajemen User." data-confirm-button="Ya, Keluarkan">
               <?= csrf_field() ?>
               <input type="hidden" name="form_action" value="remove">
               <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">

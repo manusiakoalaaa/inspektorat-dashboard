@@ -3,6 +3,7 @@ define('ROOT_URL', '');
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_role(['administrator', 'auditor']);
+refresh_all_reviu_status($pdo);
 
 $page_title = 'Reviu Tertunda';
 $page_subtitle = 'Daftar reviu yang berstatus tertunda dan perlu tindak lanjut';
@@ -34,7 +35,7 @@ include __DIR__ . '/includes/header.php';
   <div style="overflow-x:auto;">
     <table class="table-x">
       <thead>
-        <tr><th>No</th><th>OPD</th><th>Jenis</th><th>Tahun</th><th>Tim</th><th>Target Selesai</th><th>Keterlambatan</th><th>Dokumen</th><th style="min-width:130px;">Progres</th><th>Keterangan</th><th>Aksi</th></tr>
+        <tr><th>No</th><th>OPD</th><th>Jenis</th><th>Tahun</th><th>Tim</th><th>Target Selesai</th><th>Keterlambatan</th><th>Dokumen</th><th style="min-width:130px;">Progres</th><th style="min-width:220px;">Kendala</th><th>Aksi</th></tr>
       </thead>
       <tbody>
         <?php if (empty($data)): ?>
@@ -65,7 +66,7 @@ include __DIR__ . '/includes/header.php';
               <span style="font-weight:700; font-size:12px;"><?= (int)$r['progres'] ?>%</span>
             </div>
           </td>
-          <td class="small-muted"><?= e($r['keterangan'] ?: '-') ?></td>
+          <td style="font-size:12.5px; color:var(--red);"><i class="bi bi-exclamation-circle"></i> <?= e($r['kendala'] ?: 'Dokumen belum lengkap.') ?></td>
           <td><a href="reviu_detail.php?id=<?= (int)$r['id'] ?>" class="btn-eye"><i class="bi bi-eye"></i></a></td>
         </tr>
         <?php endforeach; endif; ?>

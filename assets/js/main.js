@@ -57,3 +57,59 @@ document.addEventListener('DOMContentLoaded', function () {
 function formatNumber(n) {
   return new Intl.NumberFormat('id-ID').format(n);
 }
+
+// ===== Konfirmasi hapus/aksi via SweetAlert2 =====
+// Pakai atribut data-confirm pada <form> (submit) atau <a> (klik) alih-alih
+// window.confirm() bawaan browser, supaya tampilan konfirmasi konsisten.
+//
+//   <form data-confirm="Yakin hapus data ini?" ...>
+//   <a href="..." data-confirm="Yakin ingin logout?" data-confirm-icon="question">
+//
+// Atribut opsional: data-confirm-title, data-confirm-icon (warning/question/error),
+// data-confirm-button (teks tombol konfirmasi).
+document.addEventListener('submit', function (e) {
+  const form = e.target;
+  if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-confirm')) return;
+  if (form.dataset.confirmed === '1') return; // sudah dikonfirmasi, lanjutkan submit asli
+  e.preventDefault();
+
+  Swal.fire({
+    title: form.dataset.confirmTitle || 'Konfirmasi',
+    text: form.dataset.confirm,
+    icon: form.dataset.confirmIcon || 'warning',
+    showCancelButton: true,
+    confirmButtonText: form.dataset.confirmButton || 'Ya, lanjutkan',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#9ca3af',
+    reverseButtons: true,
+    focusCancel: true,
+  }).then(function (result) {
+    if (result.isConfirmed) {
+      form.dataset.confirmed = '1';
+      form.submit();
+    }
+  });
+});
+
+document.addEventListener('click', function (e) {
+  const link = e.target.closest ? e.target.closest('a[data-confirm]') : null;
+  if (!link) return;
+  e.preventDefault();
+
+  Swal.fire({
+    title: link.dataset.confirmTitle || 'Konfirmasi',
+    text: link.dataset.confirm,
+    icon: link.dataset.confirmIcon || 'question',
+    showCancelButton: true,
+    confirmButtonText: link.dataset.confirmButton || 'Ya',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#2f6fed',
+    cancelButtonColor: '#9ca3af',
+    reverseButtons: true,
+  }).then(function (result) {
+    if (result.isConfirmed) {
+      window.location.href = link.href;
+    }
+  });
+});

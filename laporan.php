@@ -3,6 +3,7 @@ define('ROOT_URL', '');
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_role(['administrator', 'auditor']);
+refresh_all_reviu_status($pdo);
 
 $years = $pdo->query("SELECT DISTINCT tahun FROM reviu ORDER BY tahun DESC")->fetchAll(PDO::FETCH_COLUMN);
 if (empty($years)) $years = [date('Y')];
@@ -36,10 +37,10 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Disposition: attachment; filename=laporan_reviu_' . date('Ymd_His') . '.csv');
     $out = fopen('php://output', 'w');
     fputs($out, "\xEF\xBB\xBF"); // BOM utk Excel
-    fputcsv($out, ['No', 'OPD', 'Jenis Reviu', 'Tahun', 'Tim Reviu', 'Tgl Mulai', 'Tgl Target Selesai', 'Status Dokumen', 'Status', 'Progres (%)', 'Keterangan']);
+    fputcsv($out, ['No', 'OPD', 'Jenis Reviu', 'Tahun', 'Tim Reviu', 'Tgl Mulai', 'Tgl Target Selesai', 'Status Dokumen', 'Status', 'Progres (%)', 'Keterangan', 'Kendala']);
     $no = 1;
     foreach ($data as $r) {
-        fputcsv($out, [$no++, $r['nama_opd'], $r['nama_jenis'], $r['tahun'], $r['nama_tim'], $r['tgl_mulai'], $r['tgl_target_selesai'], $r['dokumen_status'], $r['status'], $r['progres'], $r['keterangan']]);
+        fputcsv($out, [$no++, $r['nama_opd'], $r['nama_jenis'], $r['tahun'], $r['nama_tim'], $r['tgl_mulai'], $r['tgl_target_selesai'], $r['dokumen_status'], $r['status'], $r['progres'], $r['keterangan'], $r['kendala']]);
     }
     fclose($out);
     exit;
@@ -91,10 +92,10 @@ include __DIR__ . '/includes/header.php';
   </div>
   <div style="overflow-x:auto;">
     <table class="table-x">
-      <thead><tr><th>No</th><th>OPD</th><th>Jenis</th><th>Tahun</th><th>Tim</th><th>Tgl Mulai</th><th>Target</th><th>Dokumen</th><th>Status</th><th>Progres</th><th>Keterangan</th></tr></thead>
+      <thead><tr><th>No</th><th>OPD</th><th>Jenis</th><th>Tahun</th><th>Tim</th><th>Tgl Mulai</th><th>Target</th><th>Dokumen</th><th>Status</th><th>Progres</th><th>Keterangan</th><th>Kendala</th></tr></thead>
       <tbody>
         <?php if (empty($data)): ?>
-          <tr><td colspan="11" class="text-center py-4 small-muted">Tidak ada data sesuai filter.</td></tr>
+          <tr><td colspan="12" class="text-center py-4 small-muted">Tidak ada data sesuai filter.</td></tr>
         <?php else: $no=1; foreach ($data as $r): ?>
         <tr>
           <td><?= $no++ ?></td>
@@ -108,6 +109,7 @@ include __DIR__ . '/includes/header.php';
           <td><span class="badge-x <?= status_badge_class($r['status']) ?>"><?= e($r['status']) ?></span></td>
           <td><?= (int)$r['progres'] ?>%</td>
           <td class="small-muted"><?= e($r['keterangan'] ?: '-') ?></td>
+          <td class="small-muted" style="<?= $r['status']==='Tertunda' ? 'color:var(--red);' : '' ?>"><?= e($r['kendala'] ?: '-') ?></td>
         </tr>
         <?php endforeach; endif; ?>
       </tbody>

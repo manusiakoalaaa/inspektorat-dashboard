@@ -3,6 +3,7 @@ define('ROOT_URL', '');
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_role(['administrator', 'auditor']);
+refresh_all_reviu_status($pdo);
 
 $page_title = 'Progres OPD';
 $page_subtitle = 'Progres reviu dikelompokkan per Perangkat Daerah';
@@ -90,7 +91,9 @@ include __DIR__ . '/includes/header.php';
           <td><?= format_tanggal_indo($r['tgl_mulai']) ?></td>
           <td><?= format_tanggal_indo($r['tgl_target_selesai']) ?></td>
           <td><span class="badge-x <?= dokumen_badge_class($r['dokumen_status']) ?>"><?= e($r['dokumen_status']) ?></span></td>
-          <td><span class="badge-x <?= status_badge_class($r['status']) ?>"><?= e($r['status']) ?></span></td>
+          <td>
+            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= ($r['status'] === 'Tertunda' && !empty($r['kendala'])) ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
+          </td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <div class="progress-thin" style="flex:1;"><div class="bar" style="width:<?= (int)$r['progres'] ?>%; background:<?= progres_bar_color($r['progres']) ?>;"></div></div>

@@ -3,6 +3,7 @@ define('ROOT_URL', '../');
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_login();
+refresh_all_reviu_status($pdo);
 
 header('Content-Type: application/json');
 
@@ -80,7 +81,7 @@ foreach ($rows as $r) {
 
 // ===== Tabel daftar progres reviu =====
 $sql = "SELECT r.id, o.nama_opd, j.nama_jenis, r.tahun, t.nama_tim, r.tgl_mulai, r.tgl_target_selesai,
-               r.dokumen_status, r.status, r.progres, r.keterangan
+               r.dokumen_status, r.status, r.progres, r.keterangan, r.kendala
         FROM reviu r
         JOIN opd o ON o.id = r.opd_id
         JOIN jenis_reviu j ON j.id = r.jenis_reviu_id
@@ -116,6 +117,40 @@ foreach ($jadwal as &$j) {
 }
 unset($j);
 
+// ===== Peringatan dini: reviu mendekati tenggat (H-0 s.d H-7), belum tuntas =====
+// Selalu global (tidak ikut filter dashboard) supaya konsisten dengan badge sidebar.
+$ew_jenis_list = dokumen_jenis_list();
+$ew_rows = $pdo->query("SELECT r.id, o.nama_opd, j.nama_jenis, r.tahun, r.progres, r.tgl_target_selesai
+                         FROM reviu r
+                         JOIN opd o ON o.id = r.opd_id
+                         JOIN jenis_reviu j ON j.id = r.jenis_reviu_id
+                         WHERE r.progres < 100")->fetchAll();
+$early_warning_items = [];
+$ew_kritis = 0;
+$ew_peringatan = 0;
+foreach ($ew_rows as $er) {
+    $sisa = hari_tersisa($er['tgl_target_selesai']);
+    $level = reviu_urgency_level($er['progres'], $sisa);
+    if ($level !== 'kritis' && $level !== 'peringatan') continue;
+    if ($level === 'kritis') $ew_kritis++; else $ew_peringatan++;
+
+    $terunggah = dokumen_jenis_terunggah($pdo, $er['id']);
+    $next = dokumen_jenis_berikutnya($terunggah);
+
+    $early_warning_items[] = [
+        'id'               => (int) $er['id'],
+        'nama_opd'         => $er['nama_opd'],
+        'nama_jenis'       => $er['nama_jenis'],
+        'tahun'            => $er['tahun'],
+        'progres'          => (int) $er['progres'],
+        'sisa_hari'        => $sisa,
+        'level'            => $level,
+        'target_fmt'       => format_tanggal_indo($er['tgl_target_selesai']),
+        'dokumen_ditunggu' => $next !== null ? $ew_jenis_list[$next]['label'] : null,
+    ];
+}
+usort($early_warning_items, function ($a, $b) { return $a['sisa_hari'] <=> $b['sisa_hari']; });
+
 // ===== Dokumen masuk minggu ini =====
 $sql = "SELECT
           COUNT(*) AS total,
@@ -143,6 +178,11 @@ echo json_encode([
     'chart_jenis'  => $chart_jenis,
     'table'        => $table,
     'jadwal'       => $jadwal,
+    'early_warning' => [
+        'kritis'     => $ew_kritis,
+        'peringatan' => $ew_peringatan,
+        'items'      => array_slice($early_warning_items, 0, 6),
+    ],
     'dokumen_minggu' => [
         'total'         => (int) ($doc['total'] ?? 0),
         'lengkap'       => (int) ($doc['lengkap'] ?? 0),

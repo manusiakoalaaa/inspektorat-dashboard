@@ -143,11 +143,49 @@ function dokumen_jenis_terbuka($key, $terunggah)
 }
 
 /**
+ * Sisa hari menuju tanggal target selesai. Positif = masih tersisa,
+ * negatif = sudah lewat sekian hari.
+ */
+function hari_tersisa($tgl_target)
+{
+    if (empty($tgl_target)) return null;
+    $target = strtotime($tgl_target);
+    $today = strtotime(date('Y-m-d'));
+    return (int) floor(($target - $today) / 86400);
+}
+
+/**
+ * Level urgensi early warning berdasarkan sisa hari menuju target
+ * dan progres reviu saat ini:
+ *  - selesai   : progres sudah 100%
+ *  - lewat     : tanggal target sudah lewat, belum tuntas
+ *  - kritis    : H-2 s.d H-0 (2 hari lagi atau kurang), belum tuntas
+ *  - peringatan: H-3 s.d H-7, belum tuntas
+ *  - aman      : lebih dari 7 hari lagi
+ */
+function reviu_urgency_level($progres, $sisa_hari)
+{
+    if ((int) $progres >= 100) return 'selesai';
+    if ($sisa_hari === null) return 'aman';
+    if ($sisa_hari < 0) return 'lewat';
+    if ($sisa_hari <= 2) return 'kritis';
+    if ($sisa_hari <= 7) return 'peringatan';
+    return 'aman';
+}
+
+/**
  * Hitung ulang progres, status reviu, dan status dokumen berdasarkan
  * dokumen yang sudah diunggah, lalu simpan ke tabel reviu.
  */
 function recalculate_reviu($pdo, $reviu_id)
 {
+    $reviu_id = (int) $reviu_id;
+
+    $stmt = $pdo->prepare("SELECT tgl_target_selesai FROM reviu WHERE id = ?");
+    $stmt->execute([$reviu_id]);
+    $reviu = $stmt->fetch();
+    if (!$reviu) return;
+
     $terunggah = dokumen_jenis_terunggah($pdo, $reviu_id);
 
     $progres = 0;
@@ -159,13 +197,52 @@ function recalculate_reviu($pdo, $reviu_id)
         }
     }
 
-    if ($progres >= 100)      $status = 'Selesai';
-    elseif ($progres > 0)     $status = 'Proses';
-    else                      $status = 'Belum Mulai';
-
     // Status dokumen menjadi "Lengkap" setelah Dokumen Pemeriksaan diunggah.
     $dok_status = in_array('Pemeriksaan', $terunggah, true) ? 'Lengkap' : 'Belum Lengkap';
 
-    $stmt = $pdo->prepare("UPDATE reviu SET progres = ?, status = ?, dokumen_status = ? WHERE id = ?");
-    $stmt->execute([$progres, $status, $dok_status, (int) $reviu_id]);
+    $kendala = null;
+    if ($progres >= 100) {
+        $status = 'Selesai';
+    } elseif (!empty($reviu['tgl_target_selesai']) && date('Y-m-d') > $reviu['tgl_target_selesai']) {
+        // Lewat tanggal target selesai tapi belum tuntas -> Tertunda + jelaskan kendalanya
+        $status = 'Tertunda';
+        $kendala = reviu_kendala_text($terunggah, $reviu['tgl_target_selesai']);
+    } elseif ($progres > 0) {
+        $status = 'Proses';
+    } else {
+        $status = 'Belum Mulai';
+    }
+
+    $stmt = $pdo->prepare("UPDATE reviu SET progres = ?, status = ?, dokumen_status = ?, kendala = ? WHERE id = ?");
+    $stmt->execute([$progres, $status, $dok_status, $kendala, $reviu_id]);
+}
+
+/**
+ * Susun kalimat penjelasan kendala keterlambatan berdasarkan dokumen
+ * yang belum diunggah (mengikuti urutan wajib SPT -> Pemeriksaan -> KKR -> LHP).
+ */
+function reviu_kendala_text($terunggah, $tgl_target)
+{
+    $jenis_list = dokumen_jenis_list();
+    $next = dokumen_jenis_berikutnya($terunggah);
+    $lewat = 'Melewati tanggal target selesai (' . format_tanggal_indo($tgl_target) . ')';
+
+    if ($next !== null && isset($jenis_list[$next])) {
+        return $lewat . ' — ' . $jenis_list[$next]['label'] . ' belum diunggah.';
+    }
+    return $lewat . ' — dokumen belum lengkap.';
+}
+
+/**
+ * Hitung ulang status seluruh data reviu (progres, status, status dokumen,
+ * kendala). Dipanggil di halaman yang menampilkan daftar/rekap reviu supaya
+ * status "Tertunda" selalu mengikuti tanggal berjalan, bukan hanya saat ada
+ * aksi unggah/hapus dokumen.
+ */
+function refresh_all_reviu_status($pdo)
+{
+    $ids = $pdo->query("SELECT id FROM reviu")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($ids as $id) {
+        recalculate_reviu($pdo, $id);
+    }
 }

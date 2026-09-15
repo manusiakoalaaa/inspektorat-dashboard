@@ -23,6 +23,7 @@ $flash = flash_get();
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="<?= base_url('assets/css/style.css') ?>" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 <div class="app-wrapper">
@@ -60,10 +61,30 @@ $flash = flash_get();
 
   <div class="content-area">
     <?php if ($flash): ?>
-      <div class="alert-x <?= $flash['type'] === 'success' ? 'alert-success-x' : 'alert-danger-x' ?>">
-        <?= e($flash['message']) ?>
-      </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      Swal.fire({
+        icon: <?= json_encode($flash['type'] === 'success' ? 'success' : 'error') ?>,
+        title: <?= json_encode($flash['message'], JSON_UNESCAPED_UNICODE) ?>,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+      });
+    });
+    </script>
     <?php endif; ?>
     <?php if (isset($_GET['error']) && $_GET['error'] === 'akses_ditolak'): ?>
-      <div class="alert-x alert-danger-x">Anda tidak memiliki akses ke halaman tersebut.</div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      Swal.fire({
+        icon: 'error',
+        title: 'Akses Ditolak',
+        text: 'Anda tidak memiliki akses ke halaman tersebut.',
+        confirmButtonText: 'Mengerti',
+        confirmButtonColor: '#2f6fed',
+      });
+    });
+    </script>
     <?php endif; ?>

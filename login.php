@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Login - <?= e(APP_INSTANSI) ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 <div class="login-wrapper">
@@ -52,13 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-emblem">ID</div>
     <div class="login-title">DASHBOARD MONITORING PROGRES REVIU OPD</div>
     <div class="login-sub"><?= e(APP_INSTANSI) ?></div>
-
-    <?php if ($error): ?>
-      <div class="alert-x alert-danger-x"><i class="bi bi-exclamation-circle"></i> <?= e($error) ?></div>
-    <?php endif; ?>
-    <?php if (isset($_GET['logout'])): ?>
-      <div class="alert-x alert-success-x"><i class="bi bi-check-circle"></i> Anda berhasil logout.</div>
-    <?php endif; ?>
 
     <form method="POST" autocomplete="off">
       <?= csrf_field() ?>
@@ -76,5 +70,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 </div>
+<?php if ($error): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  Swal.fire({
+    icon: 'error',
+    title: 'Gagal Masuk',
+    text: <?= json_encode($error, JSON_UNESCAPED_UNICODE) ?>,
+    confirmButtonText: 'Coba Lagi',
+    confirmButtonColor: '#2f6fed',
+  });
+});
+</script>
+<?php endif; ?>
+<?php if (isset($_GET['logout'])): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  Swal.fire({
+    icon: 'success',
+    title: 'Berhasil Logout',
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+  });
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

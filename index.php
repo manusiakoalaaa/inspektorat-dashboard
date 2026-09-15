@@ -16,6 +16,16 @@ $tim_list = $pdo->query("SELECT id, nama_tim FROM tim_reviu ORDER BY nama_tim AS
 include __DIR__ . '/includes/header.php';
 ?>
 
+<!-- ===== Banner Peringatan Dini (muncul otomatis kalau ada reviu mendekati tenggat) ===== -->
+<div class="ew-banner" id="ewBanner" hidden>
+  <div class="ew-banner-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+  <div class="ew-banner-text">
+    <b id="ewBannerTitle"></b>
+    <span class="small-muted" id="ewBannerSub"></span>
+  </div>
+  <a href="peringatan_dini.php" id="ewBannerBtn" class="btn-x btn-danger-x"><i class="bi bi-shield-exclamation"></i> Lihat Peringatan Dini</a>
+</div>
+
 <!-- ===== Stat cards ===== -->
 <div class="row g-3 mb-3">
   <div class="col-6 col-md-4 col-xl">
@@ -115,6 +125,19 @@ include __DIR__ . '/includes/header.php';
   </div>
 
   <div class="dash-right">
+    <div class="card-x mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="card-x-title mb-0"><i class="bi bi-shield-exclamation"></i> PERINGATAN DINI</div>
+        <span class="badge-x badge-tertunda" id="ewCountBadge" hidden></span>
+      </div>
+      <div id="ewListWidget">
+        <div class="small-muted">Memuat...</div>
+      </div>
+      <div class="text-end mt-2">
+        <a href="peringatan_dini.php" class="small-muted" style="font-weight:700; color:var(--blue);">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+
     <div class="card-x mb-3">
       <div class="card-x-title"><i class="bi bi-funnel-fill"></i> FILTER</div>
       <div class="filter-group mb-3">

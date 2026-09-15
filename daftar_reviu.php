@@ -3,6 +3,7 @@ define('ROOT_URL', '');
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_role(['administrator', 'auditor']);
+refresh_all_reviu_status($pdo);
 
 $page_title = 'Daftar Reviu';
 $page_subtitle = 'Kelola seluruh data reviu OPD';
@@ -99,7 +100,12 @@ include __DIR__ . '/includes/header.php';
           <td><?= format_tanggal_indo($r['tgl_mulai']) ?></td>
           <td><?= format_tanggal_indo($r['tgl_target_selesai']) ?></td>
           <td><span class="badge-x <?= dokumen_badge_class($r['dokumen_status']) ?>"><?= e($r['dokumen_status']) ?></span></td>
-          <td><span class="badge-x <?= status_badge_class($r['status']) ?>"><?= e($r['status']) ?></span></td>
+          <td>
+            <span class="badge-x <?= status_badge_class($r['status']) ?>" <?= ($r['status'] === 'Tertunda' && $r['kendala']) ? 'title="' . e($r['kendala']) . '"' : '' ?>><?= e($r['status']) ?></span>
+            <?php if ($r['status'] === 'Tertunda' && $r['kendala']): ?>
+              <div class="small-muted" style="font-size:11px; color:var(--red); max-width:220px;"><i class="bi bi-exclamation-circle"></i> <?= e($r['kendala']) ?></div>
+            <?php endif; ?>
+          </td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <div class="progress-thin" style="flex:1;"><div class="bar" style="width:<?= (int)$r['progres'] ?>%; background:<?= progres_bar_color($r['progres']) ?>;"></div></div>
@@ -119,7 +125,8 @@ include __DIR__ . '/includes/header.php';
                 ], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
                 <i class="bi bi-pencil"></i>
               </button>
-              <form method="POST" action="process/process_reviu.php" onsubmit="return confirm('Yakin hapus data reviu ini?');" style="display:inline;">
+              <form method="POST" action="process/process_reviu.php" style="display:inline;"
+                    data-confirm="Yakin hapus data reviu ini? Seluruh dokumen terkait juga akan terhapus." data-confirm-button="Ya, Hapus">
                 <?= csrf_field() ?>
                 <input type="hidden" name="form_action" value="delete">
                 <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
@@ -194,6 +201,8 @@ include __DIR__ . '/includes/header.php';
       <div class="alert-x alert-success-x" style="font-size:12.5px;">
         <i class="bi bi-info-circle"></i> Status dokumen, status reviu, dan progres <b>dihitung otomatis</b>
         dari dokumen yang diunggah pada halaman Detail Reviu (SPT &rarr; Pemeriksaan &rarr; KKR &rarr; LHP).
+        Jika Tanggal Target Selesai sudah lewat namun reviu belum tuntas, status otomatis menjadi
+        <b>Tertunda</b> lengkap dengan penjelasan kendalanya.
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-3">

@@ -3,6 +3,7 @@ define('ROOT_URL', '');
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_role(['administrator', 'auditor', 'pimpinan']);
+refresh_all_reviu_status($pdo);
 
 $page_title = 'Rekapitulasi Reviu OPD';
 $page_subtitle = 'Ringkasan progres reviu per Perangkat Daerah';

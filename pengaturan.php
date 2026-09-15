@@ -30,7 +30,7 @@ function render_master_table($items, $type, $column, $label)
             echo '<td>' . (int) $it['jumlah'] . '</td>';
             echo '<td><div class="d-flex gap-1">';
             echo '<button type="button" class="btn-eye" style="background:var(--amber-light); color:#b9770e;" onclick="openEditMaster(\'' . $type . '\',' . (int)$it['id'] . ',' . json_encode($it[$column], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) . ')"><i class="bi bi-pencil"></i></button>';
-            echo '<form method="POST" action="process/process_master.php" onsubmit="return confirm(\'Yakin hapus data ini?\');" style="display:inline;">';
+            echo '<form method="POST" action="process/process_master.php" style="display:inline;" data-confirm="Yakin hapus data \'' . e($it[$column]) . '\'? Data yang masih dipakai reviu tidak bisa dihapus." data-confirm-button="Ya, Hapus">';
             echo csrf_field();
             echo '<input type="hidden" name="type" value="' . e($type) . '"><input type="hidden" name="form_action" value="delete"><input type="hidden" name="id" value="' . (int)$it['id'] . '">';
             echo '<button type="submit" class="btn-eye" style="background:var(--red-light); color:var(--red);"><i class="bi bi-trash"></i></button>';
