@@ -37,10 +37,13 @@ CREATE TABLE users (
 --   admin    / admin123     -> Administrator
 --   auditor1 / auditor123   -> Auditor
 --   pimpinan / pimpinan123  -> Pimpinan
+-- Password default auditor2/auditor3: auditor123
 INSERT INTO users (username, password, nama_lengkap, jabatan, role_id, status) VALUES
 ('admin',    '$2y$10$tcdxQRY5g8NB6LvNVcwXaeXZgKU3gP21KqYWZB/2afgTYbTNi2.g.', 'Administrator Sistem', 'Admin Aplikasi', 1, 'aktif'),
 ('auditor1', '$2y$10$w66.pT9q1RCBbSXyfBNinuxZxytEXcxf9L1MSff.22BH5Fv47L.ru', 'Budi Santoso',          'PPUPD Ahli Pertama', 2, 'aktif'),
-('pimpinan', '$2y$10$b6NkqsaXHAb2NIulKXjGpuAvTKXFndMeXK6X0a35rDm1oO2Ekw8Bm', 'Inspektur Kabupaten',   'Inspektur', 3, 'aktif');
+('pimpinan', '$2y$10$b6NkqsaXHAb2NIulKXjGpuAvTKXFndMeXK6X0a35rDm1oO2Ekw8Bm', 'Inspektur Kabupaten',   'Inspektur', 3, 'aktif'),
+('auditor2', '$2y$10$s/Ju/1.1NjyuXJJbUx8n3uoMoAd8ruoCv1/uI/YJ6Thz4OdgszV2O', 'Siti Rahma',            'PPUPD Ahli Muda', 2, 'aktif'),
+('auditor3', '$2y$10$s/Ju/1.1NjyuXJJbUx8n3uoMoAd8ruoCv1/uI/YJ6Thz4OdgszV2O', 'Andi Wijaya',           'PPUPD Ahli Pertama', 2, 'aktif');
 
 -- ============ MASTER: OPD ============
 CREATE TABLE opd (
@@ -93,15 +96,27 @@ CREATE TABLE reviu (
   CONSTRAINT fk_reviu_tim FOREIGN KEY (tim_reviu_id) REFERENCES tim_reviu(id)
 ) ENGINE=InnoDB;
 
-INSERT INTO reviu (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_target_selesai, dokumen_status, status, progres, keterangan) VALUES
-(1, 1, 1, 2025, '2025-05-01', '2025-05-10', 'Lengkap',       'Proses',  80, 'Menunggu klarifikasi'),
-(2, 1, 2, 2025, '2025-05-02', '2025-05-12', 'Belum Lengkap', 'Tertunda',60, 'Dokumen belum lengkap'),
-(3, 2, 1, 2025, '2025-04-28', '2025-05-08', 'Lengkap',       'Selesai', 100,'Selesai reviu'),
-(4, 1, 3, 2025, '2025-05-03', '2025-05-13', 'Belum Lengkap', 'Proses',  45, 'Menunggu dokumen'),
-(5, 2, 2, 2025, '2025-04-29', '2025-05-09', 'Lengkap',       'Proses',  70, 'Klarifikasi sedang berjalan'),
-(6, 3, 3, 2025, '2025-04-30', '2025-05-11', 'Lengkap',       'Proses',  55, 'Menunggu klarifikasi'),
-(7, 2, 1, 2025, '2025-04-27', '2025-05-07', 'Lengkap',       'Selesai', 90, 'Selesai, menunggu paraf'),
-(8, 1, 2, 2025, '2025-05-04', '2025-05-14', 'Belum Lengkap', 'Tertunda',30, 'Dokumen terlambat');
+-- Data contoh tahun 2026 yang sengaja dibuat variatif supaya seluruh fungsi
+-- (status otomatis Selesai/Proses/Tertunda/Belum Mulai, level peringatan dini
+-- aman/peringatan/kritis, serta kendala otomatis & manual) bisa langsung
+-- didemokan tanpa perlu input manual lebih dulu.
+INSERT INTO reviu (opd_id, jenis_reviu_id, tim_reviu_id, tahun, tgl_mulai, tgl_target_selesai, dokumen_status, status, progres, keterangan, kendala, kendala_manual) VALUES
+(1, 1, 1, 2026, '2026-01-05', '2026-01-20', 'Lengkap',       'Selesai',    100, 'Reviu RKA selesai tepat waktu', NULL, 0),
+(2, 2, 2, 2026, '2026-02-01', '2026-02-20', 'Lengkap',       'Selesai',    100, 'Selesai, sempat melewati target beberapa hari', NULL, 0),
+(3, 3, 3, 2026, '2026-03-01', '2026-03-25', 'Belum Lengkap', 'Tertunda',   25,  'Menunggu dokumen pemeriksaan dari OPD', 'Melewati tanggal target selesai (25 Maret 2026) — Dokumen Pemeriksaan belum diunggah.', 0),
+(4, 1, 1, 2026, '2026-04-01', '2026-04-20', 'Belum Lengkap', 'Tertunda',   0,   'OPD belum merespons permintaan dokumen', 'Melewati tanggal target selesai (20 April 2026) — SPT (Surat Perintah Tugas) belum diunggah.', 0),
+(5, 2, 2, 2026, '2026-05-01', '2026-05-25', 'Lengkap',       'Tertunda',   75,  'Menunggu tanda tangan LHP', 'Tim reviu masih menunggu tanda tangan Inspektur untuk LHP, ditargetkan selesai minggu depan.', 1),
+(6, 4, 3, 2026, '2026-08-20', '2026-10-05', 'Lengkap',       'Proses',     50,  'Verifikasi anggaran bersama OPD Kominfo', 'Data dari OPD Kominfo belum lengkap untuk verifikasi anggaran, namun jadwal reviu masih sesuai target.', 1),
+(7, 2, 1, 2026, '2026-09-01', '2026-09-17', 'Lengkap',       'Proses',     75,  'LHP dalam tahap finalisasi', NULL, 0),
+(8, 3, 2, 2026, '2026-09-05', '2026-09-20', 'Belum Lengkap', 'Proses',     25,  'Menunggu Dokumen Pemeriksaan dari OPD', NULL, 0),
+(1, 3, 3, 2026, '2026-09-10', '2026-11-30', 'Belum Lengkap', 'Belum Mulai',0,   'Menunggu jadwal turun tim', NULL, 0),
+(2, 4, 1, 2026, '2026-09-14', '2026-09-16', 'Belum Lengkap', 'Belum Mulai',0,   'Segera perlu tim turun, jadwal sangat mepet', NULL, 0),
+(3, 1, 2, 2026, '2026-07-01', '2026-07-20', 'Lengkap',       'Selesai',    100, 'Selesai reviu RKA', NULL, 0),
+(4, 2, 3, 2026, '2026-08-01', '2026-08-25', 'Belum Lengkap', 'Tertunda',   25,  'Menunggu Dokumen Pemeriksaan dari OPD', 'Melewati tanggal target selesai (25 Agustus 2026) — Dokumen Pemeriksaan belum diunggah.', 0);
+-- Catatan: status/progres/kendala di atas sudah senilai hasil perhitungan
+-- otomatis (recalculate_reviu). Nilai ini akan tetap dihitung ulang otomatis
+-- setiap halaman reviu dibuka mengikuti tanggal berjalan & dokumen di bawah,
+-- kecuali baris dengan kendala_manual = 1 (kendalanya dikunci manual).
 
 -- ============ DOKUMEN ============
 CREATE TABLE dokumen (
@@ -117,10 +132,29 @@ CREATE TABLE dokumen (
 ) ENGINE=InnoDB;
 
 INSERT INTO dokumen (reviu_id, jenis, nama_dokumen, status, tanggal_upload) VALUES
-(1, 'KKR',         'KKR Reviu RKA Dinas PUPR', 'Lengkap', '2025-05-05'),
-(3, 'Pemeriksaan', 'Berita Acara Reviu LKPD Dinas Pendidikan', 'Lengkap', '2025-05-06'),
-(7, 'LHP',         'Laporan Hasil Reviu LKPD Badan Keuangan', 'Lengkap', '2025-05-04'),
-(2, 'Pemeriksaan', 'Data Pendukung Reviu RKA Dinas Kesehatan', 'Belum Lengkap', '2025-05-07');
+(1,  'SPT',         'SPT (Surat Perintah Tugas) Dinas PUPR', 'Lengkap', '2026-01-08'),
+(1,  'Pemeriksaan', 'Dokumen Pemeriksaan Dinas PUPR', 'Lengkap', '2026-01-12'),
+(1,  'KKR',         'KKR (Kertas Kerja Reviu) Dinas PUPR', 'Lengkap', '2026-01-16'),
+(1,  'LHP',         'LHP (Laporan Hasil Pemeriksaan) Dinas PUPR', 'Lengkap', '2026-01-19'),
+(2,  'SPT',         'SPT (Surat Perintah Tugas) Dinas Kesehatan', 'Lengkap', '2026-02-03'),
+(2,  'Pemeriksaan', 'Dokumen Pemeriksaan Dinas Kesehatan', 'Lengkap', '2026-02-10'),
+(2,  'KKR',         'KKR (Kertas Kerja Reviu) Dinas Kesehatan', 'Lengkap', '2026-02-18'),
+(2,  'LHP',         'LHP (Laporan Hasil Pemeriksaan) Dinas Kesehatan', 'Lengkap', '2026-02-25'),
+(3,  'SPT',         'SPT (Surat Perintah Tugas) Dinas Pendidikan', 'Lengkap', '2026-03-05'),
+(5,  'SPT',         'SPT (Surat Perintah Tugas) Dinas Sosial', 'Lengkap', '2026-05-04'),
+(5,  'Pemeriksaan', 'Dokumen Pemeriksaan Dinas Sosial', 'Lengkap', '2026-05-12'),
+(5,  'KKR',         'KKR (Kertas Kerja Reviu) Dinas Sosial', 'Lengkap', '2026-05-20'),
+(6,  'SPT',         'SPT (Surat Perintah Tugas) Dinas Kominfo', 'Lengkap', '2026-08-22'),
+(6,  'Pemeriksaan', 'Dokumen Pemeriksaan Dinas Kominfo', 'Lengkap', '2026-09-15'),
+(7,  'SPT',         'SPT (Surat Perintah Tugas) Badan Keuangan', 'Lengkap', '2026-09-02'),
+(7,  'Pemeriksaan', 'Dokumen Pemeriksaan Badan Keuangan', 'Lengkap', '2026-09-08'),
+(7,  'KKR',         'KKR (Kertas Kerja Reviu) Badan Keuangan', 'Lengkap', '2026-09-14'),
+(8,  'SPT',         'SPT (Surat Perintah Tugas) Kecamatan Kotapinang', 'Lengkap', '2026-09-15'),
+(11, 'SPT',         'SPT (Surat Perintah Tugas) Dinas Pendidikan', 'Lengkap', '2026-07-03'),
+(11, 'Pemeriksaan', 'Dokumen Pemeriksaan Dinas Pendidikan', 'Lengkap', '2026-07-08'),
+(11, 'KKR',         'KKR (Kertas Kerja Reviu) Dinas Pendidikan', 'Lengkap', '2026-07-14'),
+(11, 'LHP',         'LHP (Laporan Hasil Pemeriksaan) Dinas Pendidikan', 'Lengkap', '2026-07-19'),
+(12, 'SPT',         'SPT (Surat Perintah Tugas) Dinas Perhubungan', 'Lengkap', '2026-08-04');
 
 -- ============ ANGGOTA TIM REVIU ============
 CREATE TABLE tim_anggota (
@@ -134,6 +168,14 @@ CREATE TABLE tim_anggota (
   UNIQUE KEY uniq_tim_user (tim_reviu_id, user_id)
 ) ENGINE=InnoDB;
 
+INSERT INTO tim_anggota (tim_reviu_id, user_id, peran) VALUES
+(1, 2, 'Ketua'),   -- auditor1 (Budi Santoso)
+(1, 5, 'Anggota'), -- auditor3 (Andi Wijaya)
+(2, 4, 'Ketua'),   -- auditor2 (Siti Rahma)
+(2, 2, 'Anggota'), -- auditor1
+(3, 5, 'Ketua'),   -- auditor3
+(3, 4, 'Anggota'); -- auditor2
+
 -- ============ JADWAL KEGIATAN ============
 CREATE TABLE jadwal_kegiatan (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -146,9 +188,11 @@ CREATE TABLE jadwal_kegiatan (
 ) ENGINE=InnoDB;
 
 INSERT INTO jadwal_kegiatan (judul, opd_id, tanggal, warna) VALUES
-('Reviu RKA', 1, '2025-05-10', 'biru'),
-('Reviu LKPD', 2, '2025-05-12', 'kuning'),
-('Rapat Klarifikasi', 4, '2025-05-10', 'hijau');
+('Turun Tim Reviu Lainnya Dinas Kesehatan', 2, '2026-09-16', 'kuning'),
+('Klarifikasi LHP Badan Keuangan', 7, '2026-09-17', 'merah'),
+('Rapat Pembukaan Reviu LPPD Kec. Kotapinang', 8, '2026-09-18', 'biru'),
+('Rapat Evaluasi Reviu RKA Dinas PUPR', 1, '2026-09-25', 'hijau'),
+('Sosialisasi Reviu LPPD Dinas Pendidikan', 3, '2026-10-02', 'biru');
 
 -- =========================================================
 -- SELESAI. Setelah import, akses login.php dengan salah satu
